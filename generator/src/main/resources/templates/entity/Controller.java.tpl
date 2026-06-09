@@ -41,11 +41,11 @@ public class {{entity}}Controller implements {{generatedApiInterface}} {
     }
     @Override
     public Response get{{entity}}ById(String id) {
-        {{entity}} entity = dao.findById(id);
-        if (entity == null) {
+        {{entity}} {{entityField}} = dao.findById(id);
+        if ({{entityField}} == null) {
             return Response.status(Response.Status.NOT_FOUND).build();
         }
-        return Response.ok(mapper.toDto(entity)).build();
+        return Response.ok(mapper.toDto({{entityField}})).build();
     }
     @Override
     public Response update{{entity}}(String id, {{generatedDto}} dto) {
@@ -57,8 +57,8 @@ public class {{entity}}Controller implements {{generatedApiInterface}} {
     }
     @Override
     public Response delete{{entity}}(String id) {
-        {{entity}} entity = dao.findById(id);
-        if (entity == null) {
+        {{entity}} {{entityField}} = dao.findById(id);
+        if ({{entityField}} == null) {
             return Response.status(Response.Status.NOT_FOUND).build();
         }
         dao.deleteQueryById(id);

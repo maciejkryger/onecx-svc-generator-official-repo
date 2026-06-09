@@ -100,20 +100,20 @@ public class OpenApiService {
         Map<String, Object> schema = createEmptySchema();
         Map<String, Object> properties = (Map<String, Object>) schema.get("properties");
 
-        properties.put("pageNumber", Map.of(
-                "type", "integer",
-                "format", "int32",
-                "description", "The number of page.",
-                "default", 0
-        ));
+        Map<String, Object> pageNumberProps = new LinkedHashMap<>();
+        pageNumberProps.put("type", "integer");
+        pageNumberProps.put("format", "int32");
+        pageNumberProps.put("description", "The number of page.");
+        pageNumberProps.put("default", 0);
+        properties.put("pageNumber", pageNumberProps);
 
-        properties.put("pageSize", Map.of(
-                "type", "integer",
-                "format", "int32",
-                "description", "The size of page",
-                "default", 100,
-                "maximum", 1000
-        ));
+        Map<String, Object> pageSizeProps = new LinkedHashMap<>();
+        pageSizeProps.put("type", "integer");
+        pageSizeProps.put("format", "int32");
+        pageSizeProps.put("description", "The size of page");
+        pageSizeProps.put("default", 100);
+        pageSizeProps.put("maximum", 1000);
+        properties.put("pageSize", pageSizeProps);
 
         for (FieldDef field : fields) {
             properties.put(field.name(), createSimpleProperty(field.type()));
@@ -132,13 +132,31 @@ public class OpenApiService {
         Map<String, Object> schema = new LinkedHashMap<>();
         schema.put("type", "object");
         Map<String, Object> properties = new LinkedHashMap<>();
-        properties.put("totalElements", Map.of("type", "integer", "format", "int64"));
-        properties.put("totalPages", Map.of("type", "integer", "format", "int32"));
-        properties.put("number", Map.of("type", "integer", "format", "int32"));
-        properties.put("size", Map.of("type", "integer", "format", "int32"));
+        Map<String, Object> totalElementsProps = new LinkedHashMap<>();
+        totalElementsProps.put("type", "integer");
+        totalElementsProps.put("format", "int64");
+        properties.put("totalElements", totalElementsProps);
+
+        Map<String, Object> totalPagesProps = new LinkedHashMap<>();
+        totalPagesProps.put("type", "integer");
+        totalPagesProps.put("format", "int32");
+        properties.put("totalPages", totalPagesProps);
+
+        Map<String, Object> numberProps = new LinkedHashMap<>();
+        numberProps.put("type", "integer");
+        numberProps.put("format", "int32");
+        properties.put("number", numberProps);
+
+        Map<String, Object> sizeProps = new LinkedHashMap<>();
+        sizeProps.put("type", "integer");
+        sizeProps.put("format", "int32");
+        properties.put("size", sizeProps);
+
         Map<String, Object> streamProp = new LinkedHashMap<>();
         streamProp.put("type", "array");
-        streamProp.put("items", Map.of("$ref", "#/components/schemas/" + entity));
+        Map<String, Object> items = new LinkedHashMap<>();
+        items.put("$ref", "#/components/schemas/" + entity);
+        streamProp.put("items", items);
         properties.put("stream", streamProp);
         schema.put("properties", properties);
 
@@ -231,12 +249,12 @@ public class OpenApiService {
         }
         op.put("operationId", opId);
 
-        op.put("parameters", List.of(Map.of(
-                "in", "path",
-                "name", "id",
-                "required", true,
-                "schema", Map.of("type", "string")
-        )));
+        Map<String, Object> pathParam = new LinkedHashMap<>();
+        pathParam.put("name", "id");
+        pathParam.put("in", "path");
+        pathParam.put("required", true);
+        pathParam.put("schema", Map.of("type", "string"));
+        op.put("parameters", List.of(pathParam));
 
         Map<String, Object> responses = new LinkedHashMap<>();
         responses.put("200", successObjectResponse(entity + " found", entity));
@@ -277,12 +295,12 @@ public class OpenApiService {
         op.put("description", "Update " + entity);
         op.put("operationId", "update" + entity);
 
-        op.put("parameters", List.of(Map.of(
-                "in", "path",
-                "name", "id",
-                "required", true,
-                "schema", Map.of("type", "string")
-        )));
+        Map<String, Object> pathParam = new LinkedHashMap<>();
+        pathParam.put("name", "id");
+        pathParam.put("in", "path");
+        pathParam.put("required", true);
+        pathParam.put("schema", Map.of("type", "string"));
+        op.put("parameters", List.of(pathParam));
 
         Map<String, Object> requestBody = new LinkedHashMap<>();
         requestBody.put("required", true);
@@ -308,12 +326,12 @@ public class OpenApiService {
         op.put("description", "Delete " + entity);
         op.put("operationId", "delete" + entity);
 
-        op.put("parameters", List.of(Map.of(
-                "in", "path",
-                "name", "id",
-                "required", true,
-                "schema", Map.of("type", "string")
-        )));
+        Map<String, Object> pathParam = new LinkedHashMap<>();
+        pathParam.put("name", "id");
+        pathParam.put("in", "path");
+        pathParam.put("required", true);
+        pathParam.put("schema", Map.of("type", "string"));
+        op.put("parameters", List.of(pathParam));
 
         Map<String, Object> responses = new LinkedHashMap<>();
         responses.put("204", Map.of("description", entity + " deleted"));
@@ -430,17 +448,37 @@ public class OpenApiService {
     }
 
     private Map<String, Object> createSimpleProperty(String type) {
-        return switch (type) {
-            case "String" -> Map.of("type", "string");
-            case "Integer", "int" -> Map.of("type", "integer", "format", "int32");
-            case "Long", "long" -> Map.of("type", "integer", "format", "int64");
-            case "BigDecimal" -> Map.of("type", "number", "format", "double");
-            case "Boolean", "boolean" -> Map.of("type", "boolean");
-            case "LocalDate" -> Map.of("type", "string", "format", "date");
-            case "LocalDateTime" -> Map.of("type", "string", "format", "date-time");
-            case "UUID" -> Map.of("type", "string", "format", "uuid");
-            default -> Map.of("type", "string");
-        };
+        Map<String, Object> property = new LinkedHashMap<>();
+        switch (type) {
+            case "String" -> property.put("type", "string");
+            case "Integer", "int" -> {
+                property.put("type", "integer");
+                property.put("format", "int32");
+            }
+            case "Long", "long" -> {
+                property.put("type", "integer");
+                property.put("format", "int64");
+            }
+            case "BigDecimal" -> {
+                property.put("type", "number");
+                property.put("format", "double");
+            }
+            case "Boolean", "boolean" -> property.put("type", "boolean");
+            case "LocalDate" -> {
+                property.put("type", "string");
+                property.put("format", "date");
+            }
+            case "LocalDateTime" -> {
+                property.put("type", "string");
+                property.put("format", "date-time");
+            }
+            case "UUID" -> {
+                property.put("type", "string");
+                property.put("format", "uuid");
+            }
+            default -> property.put("type", "string");
+        }
+        return property;
     }
 
     @SuppressWarnings("unchecked")
