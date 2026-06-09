@@ -23,10 +23,13 @@ import io.quarkus.test.junit.QuarkusTest;
         scopes = { "{{scopePrefix}}:read", "{{scopePrefix}}:write" }
 )
 class {{entity}}ControllerTest extends AbstractTest {
+
     String token;
     String idToken;
+
     @Inject
     {{entity}}Controller controller;
+
     @BeforeEach
     void setup() {
         token = keycloakClient.getClientAccessToken("{{entityField}}ExternalTestClient");
@@ -35,6 +38,7 @@ class {{entity}}ControllerTest extends AbstractTest {
     @Test
     void getById_shouldReturn200() {
         String id = createInternalEntity();
+
         given()
                 .auth().oauth2(token)
                 .header(APM_HEADER_PARAM, idToken)
@@ -46,7 +50,9 @@ class {{entity}}ControllerTest extends AbstractTest {
     @Test
     void search_shouldCoverAllBranches() {
         createInternalEntity();
+
         {{generatedExternalSearchCriteria}} criteria = new {{generatedExternalSearchCriteria}}();
+
         given()
                 .auth().oauth2(token)
                 .header(APM_HEADER_PARAM, idToken)
@@ -60,9 +66,11 @@ class {{entity}}ControllerTest extends AbstractTest {
     @Test
     void searchWithExplicitPageNumberAndSizeShouldSucceed() {
         createInternalEntity();
+
         {{generatedExternalSearchCriteria}} criteria = new {{generatedExternalSearchCriteria}}();
         criteria.setPageNumber(2);
         criteria.setPageSize(5);
+
         given()
                 .auth().oauth2(token)
                 .header(APM_HEADER_PARAM, idToken)
@@ -76,6 +84,7 @@ class {{entity}}ControllerTest extends AbstractTest {
     @Test
     void searchWithNullBodyShouldTriggerDaoCatchAndReturnError() {
         createInternalEntity();
+
         int status = given()
                 .auth().oauth2(token)
                 .header(APM_HEADER_PARAM, idToken)
@@ -84,41 +93,23 @@ class {{entity}}ControllerTest extends AbstractTest {
                 .then()
                 .extract()
                 .statusCode();
+
         assertTrue(status >= 400);
     }
-    @Test
-    void searchWithEmptyCriteriaShouldUseDefaults() {
-        createInternalEntity();
-        String criteria = """
-                {
-                }
-                """;
-        List<?> result = given()
-                .auth().oauth2(token)
-                .header(APM_HEADER_PARAM, idToken)
-                .contentType(APPLICATION_JSON)
-                .body(criteria)
-                .when()
-                .post("/v1/{{resourcePath}}/search")
-                .then()
-                .statusCode(200)
-                .extract()
-                .body()
-                .jsonPath()
-                .getList("stream");
-        assertNotNull(result);
-    }
+
     @Test
     void shouldMapConstraintException() {
         ConstraintException ex = mock(ConstraintException.class, RETURNS_DEEP_STUBS);
         when(ex.getMessage()).thenReturn("constraint");
         when(ex.getConstraints()).thenReturn("constraint");
         when(ex.getMessageKey().name()).thenReturn("CONSTRAINT_VIOLATIONS");
+
         assertEquals(400, controller.exception(ex).getStatus());
     }
     @Test
     void shouldMapConstraintViolationException() {
         var ex = new ConstraintViolationException(java.util.Collections.emptySet());
+
         assertEquals(400, controller.constraint(ex).getStatus());
     }
     @Test

@@ -20,12 +20,16 @@ import org.tkit.quarkus.jpa.exceptions.ConstraintException;
 @ApplicationScoped
 @Transactional(Transactional.TxType.NOT_SUPPORTED)
 public class {{entity}}Controller implements {{generatedApiInterface}} {
+
     @Inject
     {{entity}}Service service;
+
     @Inject
     {{entity}}Mapper mapper;
+
     @Inject
     InternalExceptionMapper exceptionMapper;
+
     @Inject
     {{entity}}DAO dao;
     @Override

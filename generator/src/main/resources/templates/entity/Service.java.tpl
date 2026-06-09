@@ -7,8 +7,10 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 @ApplicationScoped
 public class {{entity}}Service {
+
     @Inject
     {{entity}}DAO dao;
+
     @Inject
     {{entity}}Mapper mapper;
 {{relationDaoInjections}}

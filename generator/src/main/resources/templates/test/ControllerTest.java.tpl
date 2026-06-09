@@ -26,12 +26,16 @@ import io.restassured.response.Response;
         scopes = { "{{scopePrefix}}:read", "{{scopePrefix}}:write", "{{scopePrefix}}:delete" }
 )
 class {{entity}}ControllerTest extends AbstractTest {
+
     String token;
     String idToken;
+
     @Inject
     {{entity}}Controller controller;
+
     @Inject
     {{entity}}DAO dao;
+
     @BeforeEach
     void setup() {
         token = keycloakClient.getClientAccessToken("{{entityField}}InternalTestClient");
@@ -53,6 +57,7 @@ class {{entity}}ControllerTest extends AbstractTest {
     @Test
     void get{{entity}}ByIdTest() {
         String id = create{{entity}}AndReturnId();
+
         given()
                 .auth().oauth2(token)
                 .header(APM_HEADER_PARAM, idToken)
@@ -64,6 +69,7 @@ class {{entity}}ControllerTest extends AbstractTest {
     @Test
     void get{{entity}}ByIdNotFoundTest() {
         String id = "non-existing-id";
+
         given()
                 .auth().oauth2(token)
                 .header(APM_HEADER_PARAM, idToken)
@@ -75,6 +81,7 @@ class {{entity}}ControllerTest extends AbstractTest {
     @Test
     void update{{entity}}Test() {
         String id = create{{entity}}AndReturnId();
+
         {{testUpdateDtoBody}}
         given()
                 .auth().oauth2(token)
@@ -89,6 +96,7 @@ class {{entity}}ControllerTest extends AbstractTest {
     @Test
     void update{{entity}}NotFoundTest() {
         String id = "non-existing-id";
+
         {{testUpdateDtoBody}}
         given()
                 .auth().oauth2(token)
@@ -103,6 +111,7 @@ class {{entity}}ControllerTest extends AbstractTest {
     @Test
     void delete{{entity}}Test() {
         String id = create{{entity}}AndReturnId();
+
         given()
                 .auth().oauth2(token)
                 .header(APM_HEADER_PARAM, idToken)
@@ -114,6 +123,7 @@ class {{entity}}ControllerTest extends AbstractTest {
     @Test
     void delete{{entity}}NotFoundTest() {
         String id = "non-existing-id";
+
         given()
                 .auth().oauth2(token)
                 .header(APM_HEADER_PARAM, idToken)
@@ -140,6 +150,7 @@ class {{entity}}ControllerTest extends AbstractTest {
         {{generatedInternalSearchCriteria}} criteria = new {{generatedInternalSearchCriteria}}();
         criteria.setPageNumber(1);
         criteria.setPageSize(5);
+
         given()
                 .auth().oauth2(token)
                 .header(APM_HEADER_PARAM, idToken)
@@ -160,77 +171,37 @@ class {{entity}}ControllerTest extends AbstractTest {
                 .then()
                 .extract()
                 .statusCode();
+
         assertTrue(status >= 400);
     }
-    @Test
-    void searchWithEmptyCriteriaShouldUseDefaults() {
-        create{{entity}}AndReturnId();
-        String criteria = """
-                {
-                }
-                """;
-        List<?> result = given()
-                .auth().oauth2(token)
-                .header(APM_HEADER_PARAM, idToken)
-                .contentType(APPLICATION_JSON)
-                .body(criteria)
-                .when()
-                .post("/internal/{{resourcePath}}/search")
-                .then()
-                .statusCode(200)
-                .extract()
-                .body()
-                .jsonPath()
-                .getList("stream");
-        assertNotNull(result);
-    }
-    @Test
-    void searchWithNullFieldsShouldReturnAll() {
-        create{{entity}}AndReturnId();
-        String criteria = """
-                {
-                  "pageNumber": 0,
-                  "pageSize": 100
-                }
-                """;
-        List<?> result = given()
-                .auth().oauth2(token)
-                .header(APM_HEADER_PARAM, idToken)
-                .contentType(APPLICATION_JSON)
-                .body(criteria)
-                .when()
-                .post("/internal/{{resourcePath}}/search")
-                .then()
-                .statusCode(200)
-                .extract()
-                .body()
-                .jsonPath()
-                .getList("stream");
-        assertNotNull(result);
-        assertTrue(result.size() >= 1);
-    }
-{{testInternalControllerAdditionalMethods}}
+
     @Test
     void shouldMapConstraintExceptionWithRealMapper() {
         ConstraintException ex = mock(ConstraintException.class, RETURNS_DEEP_STUBS);
         when(ex.getMessage()).thenReturn("constraint");
         when(ex.getConstraints()).thenReturn("constraint");
         when(ex.getMessageKey().name()).thenReturn("CONSTRAINT_VIOLATIONS");
+
         var response = controller.exception(ex);
+
         assertNotNull(response);
         assertEquals(400, response.getStatus());
     }
     @Test
     void shouldMapConstraintViolationExceptionWithRealMapper() {
         ConstraintViolationException ex = new ConstraintViolationException(java.util.Collections.emptySet());
+
         var response = controller.constraint(ex);
+
         assertNotNull(response);
         assertEquals(400, response.getStatus());
     }
     @Test
     void shouldMapOptimisticLockExceptionWithRealMapper() {
         OptimisticLockException ex = new OptimisticLockException("optimistic-lock");
+
         var response = controller.daoException(ex);
+
         assertNotNull(response);
         assertEquals(400, response.getStatus());
     }

@@ -145,7 +145,9 @@ public class BatchModelCommand implements Runnable {
                 ctx.put("generatedExternalDto", entity + "DTOV1");
                 ctx.put("generatedExternalSearchCriteria", entity + "SearchCriteriaDTOV1");
                 ctx.put("externalOperationSuffix", "V1");
-
+                ctx.put("externalMapperMappingImport", entityDef.api().expose() ? "import org.mapstruct.Mapping;\n" : "");
+                ctx.put("externalMapperPageResultImports", entityDef.api().expose() ? "import " + models.generatedInternalModelPackage(pkg) + "." + entity + "PageResultDTO;\nimport org.tkit.quarkus.jpa.daos.PageResult;\n" : "");
+                ctx.put("mapPageResultMethod", entityDef.api().expose() ? "@Mapping(target = \"removeStreamItem\", ignore = true)\n    " + entity + "PageResultDTO mapPageResult(PageResult<" + entity + "> pageResult);" : "");
                 ctx.put("modelPackage", models.modelPackage(pkg));
                 ctx.put("daoPackage", models.daoPackage(pkg));
                 ctx.put("domainServicePackage", models.domainServicePackage(pkg));

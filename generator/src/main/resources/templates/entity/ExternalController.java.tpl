@@ -19,21 +19,28 @@ import org.tkit.quarkus.jpa.exceptions.ConstraintException;
 @ApplicationScoped
 @Transactional(Transactional.TxType.NOT_SUPPORTED)
 public class {{entity}}Controller implements {{generatedExternalApiInterface}} {
+
     @Inject
     {{entity}}Service service;
+
     @Inject
     {{entity}}Mapper mapper;
+
     @Inject
     ExternalExceptionMapper exceptionMapper;
+
     @Inject
     {{entity}}DAO dao;
     @Override
     public Response get{{entity}}ById{{externalOperationSuffix}}(String id) {
+
         return Response.ok(mapper.toDto(dao.findById(id))).build();
     }
     @Override
     public Response search{{resourceOperationPlural}}{{externalOperationSuffix}}({{generatedExternalSearchCriteria}} criteria) {
+
         var pageResult = dao.findByCriteria(mapper.toCriteria(criteria));
+
         return Response.ok(mapper.mapPageResult(pageResult)).build();
     }
     @ServerExceptionMapper

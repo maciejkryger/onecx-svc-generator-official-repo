@@ -1,7 +1,6 @@
 package org.tkit.onecx.onecxsvcgen.commands;
 
 import org.tkit.onecx.onecxsvcgen.service.BuildService;
-import org.tkit.onecx.onecxsvcgen.service.GitHubReleaseService;
 import org.tkit.onecx.onecxsvcgen.service.LiquibaseChangelogService;
 import org.tkit.onecx.onecxsvcgen.service.NamingService;
 import org.tkit.onecx.onecxsvcgen.service.TemplateService;
@@ -26,7 +25,7 @@ public class CreateSvcCommand implements Runnable {
     @Option(names = "--package", required = true, description = "Base Java package")
     String pkg;
 
-    @Option(names = "--parent-version", description = "onecx-quarkus3-parent version; if omitted latest release is resolved automatically")
+    @Option(names = "--parent-version", description = "onecx-quarkus3-parent version; if omitted defaults to 3.1.0")
     String parentVersion;
 
     @Option(names = "--output-dir", description = "Directory where the service project should be generated")
@@ -45,9 +44,6 @@ public class CreateSvcCommand implements Runnable {
     TemplateService templates;
 
     @Inject
-    GitHubReleaseService releases;
-
-    @Inject
     NamingService naming;
 
     @Inject
@@ -61,14 +57,13 @@ public class CreateSvcCommand implements Runnable {
         try {
             boolean parentProvided = parentVersion != null && !parentVersion.isBlank();
             if (!parentProvided) {
-                // when parent version is not provided, resolve latest release tag
-                parentVersion = releases.latestReleaseTag("onecx", "onecx-quarkus3-parent", "3.1.0");
+                // when parent version is not provided, default to the current supported baseline
+                parentVersion = "3.1.0";
             }
 
             // decide whether to apply new POM changes based on parent version
             // If the resolved or provided parent version is >= 3.1.0 we enable the new POM layout;
-            // otherwise keep the legacy layout. If no parent was provided we resolve latest and
-            // apply the same rule against the resolved version.
+            // otherwise keep the legacy layout.
             boolean useNewPom = false;
             try {
                 String v = parentVersion.trim();
