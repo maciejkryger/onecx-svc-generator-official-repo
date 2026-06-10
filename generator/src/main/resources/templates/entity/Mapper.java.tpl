@@ -17,6 +17,7 @@ public interface {{entity}}Mapper {
 
     {{generatedDto}} toDto({{entity}} entity);
 
+    @Mapping(target = "removeStreamItem", ignore = true)
     {{generatedPageResultDto}} toPageResultDto(PageResult<{{entity}}> page);
 
     @Mapping(target = "id", ignore = true)
