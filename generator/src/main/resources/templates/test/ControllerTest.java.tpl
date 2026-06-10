@@ -196,6 +196,8 @@ class {{entity}}ControllerTest extends AbstractTest {
         assertTrue(status >= 400);
     }
 
+    {{testInternalControllerAdditionalMethods}}
+
     @Test
     void search{{resourceOperationPlural}}WithEmptyCriteriaShouldUseDefaults() {
         create{{entity}}AndReturnId();
@@ -347,7 +349,7 @@ class {{entity}}ControllerTest extends AbstractTest {
                 .path("id");
     }
 
-{{testInternalControllerAdditionalMethods}}
+
 {{testInternalControllerHelperMethods}}
 
 }
