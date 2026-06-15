@@ -23,7 +23,7 @@ jobs:
 
       - name: Rename jar
         run: |
-          cp generator/target/*-runner.jar onecx-svc-generator.jar
+          cp target/*-runner.jar onecx-svc-generator.jar
 
       - name: Upload release asset
         uses: softprops/action-gh-release@v2
