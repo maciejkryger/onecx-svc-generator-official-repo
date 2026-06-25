@@ -8,16 +8,14 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
-import lombok.EqualsAndHashCode;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
-import lombok.ToString;
-import org.tkit.quarkus.jpa.models.TraceableEntity;
 import org.hibernate.annotations.TenantId;
+import org.tkit.quarkus.jpa.models.TraceableEntity;
 
 @Entity
 @Table(name = "{{tableName}}")
+{{jpaAttributeOverrides}}
 @Getter
 @Setter
 public class {{entity}} extends TraceableEntity {

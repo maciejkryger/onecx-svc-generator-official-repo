@@ -44,22 +44,33 @@ java -jar onecx-svc-generator.jar create-svc \
   --package org.tkit.onecx.demo \
   --build true
 ----
-
 [cols="1,4", options="header"]
 |===
 |Flag |Description
 
-|`--build true`
-|Builds the application after generation. If you want to build it manually, you can omit this flag and run `mvn clean install` in the generated directory.
-
 |`--name`
-|Specifies the name of the generated service. The value is used as the base for the project name, artifact name, folder name, Helm metadata and application metadata.
+|Specifies the generated service project name. The value is used as the name of the generated project directory inside `--output-dir`. It is also used for project-level names such as OpenAPI file names, application metadata, Helm-related project names and generated project structure. If `--artifact-id` is not provided, `--name` is used as the source value for the generated Maven `artifactId`.
+
+|`--artifact-id`
+|Specifies the Maven `artifactId` of the generated service project. If omitted, the artifact ID is derived from `--name`. This flag affects the generated Maven project configuration, but the generated project directory and OpenAPI file names remain based on `--name`.
 
 |`--group`
-|Specifies the `groupId` of the generated service. The value is used for the Maven project configuration, including the parent `groupId`.
+|Specifies the Maven `groupId` of the generated service project. The value is used in the generated Maven project configuration and generator metadata.
 
 |`--package`
-|Specifies the base package name of the generated service. The value is used as the base package for generated application parts created from templates, such as controllers, DAOs, entities, mappers, services and exception mappers.
+|Specifies the base Java package name of the generated service. The value is used as the base package for generated application parts created from templates, such as controllers, DAOs, entities, mappers, services, exception mappers and tests.
+
+|`--parent-version`
+|Specifies the `onecx-quarkus3-parent` version used by the generated service project. If omitted, the generator defaults to the currently supported baseline version.
+
+|`--output-dir`
+|Specifies the parent output directory where the generated service project directory will be created. The generator creates a project folder inside this directory using the value of `--name`.
+
+|`--build true`
+|Builds the generated service project after generation by running Maven in the generated project directory. If you want to build it manually, you can omit this flag and run `mvn clean package` or `mvn clean install` inside the generated directory.
+
+|`--liquibase-diff`
+|Generates the Liquibase changelog by running the Maven `db-diff` profile and importing the generated diff result into the service changelog structure. If omitted, the generator creates Liquibase changelog files from its templates.
 |===
 
 .Excerpt of the build start output

@@ -1,5 +1,5 @@
 apiVersion: v2
-name: {{name}}
+name: {{artifactId}}
 description: OneCX backend service Helm chart
 type: application
 version: 0.0.0

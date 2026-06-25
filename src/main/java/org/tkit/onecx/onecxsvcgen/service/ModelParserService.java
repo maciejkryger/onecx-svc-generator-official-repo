@@ -125,8 +125,7 @@ public class ModelParserService {
     }
 
     public String tableName(String entity) {
-        // return table name in SNAKE_UPPER style (e.g. myEntity -> MY_ENTITY)
-        return dbName(entity).toUpperCase();
+        return columnName(entity);
     }
 
     private String dbName(String value) {
@@ -134,6 +133,14 @@ public class ModelParserService {
                 .replaceAll("([a-z0-9])([A-Z])", "$1_$2")
                 .replace("-", "_")
                 .toLowerCase();
+    }
+
+    private String columnName(String value) {
+        return dbName(value).toUpperCase();
+    }
+
+    private String relationColumnName(String field) {
+        return columnName(field) + "_ID";
     }
 
     public String buildEntityImports(List<FieldDef> fields) {
@@ -164,41 +171,48 @@ public class ModelParserService {
 
     public String buildFieldsDecl(List<FieldDef> fields) {
         StringBuilder sb = new StringBuilder();
+
         for (FieldDef f : fields) {
             sb.append("    @Column(name = \"")
-                    .append(dbName(f.name()).toUpperCase())
+                    .append(columnName(f.name()))
                     .append("\")\n");
+
             sb.append("    private ")
                     .append(mapDomainType(f.type()))
                     .append(" ")
                     .append(f.name())
                     .append(";\n");
         }
+
         return sb.toString();
     }
 
     public String buildRelationsDecl(List<RelationDef> relations, String basePackage) {
         StringBuilder sb = new StringBuilder();
+
         for (RelationDef r : relations) {
             sb.append("    @").append(r.relationType()).append("\n");
+
             String targetType = basePackage + ".domain.models." + r.target();
 
             if ("ManyToOne".equals(r.relationType()) || "OneToOne".equals(r.relationType())) {
                 sb.append("    @JoinColumn(name = \"")
-                        .append(dbName(r.field()).toUpperCase())
-                        .append("_ID")
+                        .append(relationColumnName(r.field()))
                         .append("\")\n");
+
                 sb.append("    private ")
                         .append(targetType)
                         .append(" ")
                         .append(r.field())
                         .append(";\n");
+
             } else if ("OneToMany".equals(r.relationType()) || "ManyToMany".equals(r.relationType())) {
                 sb.append("    private java.util.List<")
                         .append(targetType)
                         .append("> ")
                         .append(r.field())
                         .append(";\n");
+
             } else {
                 sb.append("    private ")
                         .append(targetType)
@@ -207,7 +221,31 @@ public class ModelParserService {
                         .append(";\n");
             }
         }
+
         return sb.toString();
+    }
+
+    public String buildJpaAttributeOverrides() {
+        return """
+                @jakarta.persistence.AttributeOverrides({
+                        @jakarta.persistence.AttributeOverride(
+                                name = "creationDate",
+                                column = @jakarta.persistence.Column(name = "CREATION_DATE")
+                        ),
+                        @jakarta.persistence.AttributeOverride(
+                                name = "creationUser",
+                                column = @jakarta.persistence.Column(name = "CREATION_USER")
+                        ),
+                        @jakarta.persistence.AttributeOverride(
+                                name = "modificationDate",
+                                column = @jakarta.persistence.Column(name = "MODIFICATION_DATE")
+                        ),
+                        @jakarta.persistence.AttributeOverride(
+                                name = "modificationUser",
+                                column = @jakarta.persistence.Column(name = "MODIFICATION_USER")
+                        )
+                })
+                """;
     }
 
     public String buildLiquibaseColumns(List<FieldDef> fields, List<RelationDef> relations) {
@@ -215,7 +253,7 @@ public class ModelParserService {
 
         for (FieldDef f : fields) {
             sb.append("            <column name=\"")
-                    .append(dbName(f.name()).toUpperCase())
+                    .append(columnName(f.name()))
                     .append("\" type=\"")
                     .append(mapLiquibaseType(f.type()))
                     .append("\"/>\n");
@@ -224,8 +262,8 @@ public class ModelParserService {
         for (RelationDef r : relations) {
             if ("ManyToOne".equals(r.relationType()) || "OneToOne".equals(r.relationType())) {
                 sb.append("            <column name=\"")
-                        .append(dbName(r.field()).toUpperCase())
-                        .append("_ID\" type=\"VARCHAR(36)\"/>\n");
+                        .append(relationColumnName(r.field()))
+                        .append("\" type=\"VARCHAR(36)\"/>\n");
             }
         }
 
@@ -245,17 +283,15 @@ public class ModelParserService {
                 .append("\" nullable=\"false\"/>\n");
         sb.append("            </column>\n");
 
-        // inherited fields from TraceableEntity / base model
-        sb.append("            <column name=\"creationDate\" type=\"TIMESTAMP\"/>\n");
-        sb.append("            <column name=\"creationUser\" type=\"VARCHAR(255)\"/>\n");
-        sb.append("            <column name=\"modificationDate\" type=\"TIMESTAMP\"/>\n");
-        sb.append("            <column name=\"modificationUser\" type=\"VARCHAR(255)\"/>\n");
+        sb.append("            <column name=\"CREATION_DATE\" type=\"TIMESTAMP\"/>\n");
+        sb.append("            <column name=\"CREATION_USER\" type=\"VARCHAR(255)\"/>\n");
+        sb.append("            <column name=\"MODIFICATION_DATE\" type=\"TIMESTAMP\"/>\n");
+        sb.append("            <column name=\"MODIFICATION_USER\" type=\"VARCHAR(255)\"/>\n");
         sb.append("            <column name=\"OPTLOCK\" type=\"BIGINT\"/>\n");
-
-        // local inherited/business field used in generated entities
-        sb.append("            <column name=\"tenantId\" type=\"VARCHAR(255)\"/>\n");
+        sb.append("            <column name=\"TENANT_ID\" type=\"VARCHAR(255)\"/>\n");
 
         sb.append(buildLiquibaseColumns(fields, relations));
+
         sb.append("        </createTable>\n");
         sb.append("    </changeSet>\n");
 
@@ -273,7 +309,6 @@ public class ModelParserService {
     public String buildFindByCriteriaPredicates(String entity, List<FieldDef> fields) {
         StringBuilder sb = new StringBuilder();
 
-        // choose a primary searchable field: prefer 'name' (case-insensitive), otherwise first field if present
         FieldDef target = null;
         for (FieldDef f : fields) {
             if ("name".equalsIgnoreCase(f.name())) {
@@ -286,22 +321,30 @@ public class ModelParserService {
         }
 
         if (target == null) {
-            return ""; // no searchable fields
+            return "";
         }
 
         String upper = upper(target.name());
         String getter = "criteria.get" + upper + "()";
-
-        // attribute name in metamodel: convert camelCase to SNAKE_UPPER (creationDate -> CREATION_DATE)
-        String attrConst = dbName(target.name()).toUpperCase();
+        String attrConst = columnName(target.name());
 
         if ("String".equals(target.type())) {
-            sb.append("            addSearchStringPredicate(predicates, cb, root.get(" + entity + "_." + attrConst + "), ")
+            sb.append("            addSearchStringPredicate(predicates, cb, root.get(")
+                    .append(entity)
+                    .append("_.")
+                    .append(attrConst)
+                    .append("), ")
                     .append(getter)
                     .append(");\n");
         } else {
             sb.append("            if (").append(getter).append(" != null) {\n");
-            sb.append("                predicates.add(cb.equal(root.get(" + entity + "_." + attrConst + "), ").append(getter).append("));\n");
+            sb.append("                predicates.add(cb.equal(root.get(")
+                    .append(entity)
+                    .append("_.")
+                    .append(attrConst)
+                    .append("), ")
+                    .append(getter)
+                    .append("));\n");
             sb.append("            }\n");
         }
 
@@ -478,8 +521,6 @@ public class ModelParserService {
                     .append(");\n");
         }
 
-        // relations intentionally skipped for now to keep generated tests simple and compile-safe
-
         return sb.toString();
     }
 
@@ -494,8 +535,6 @@ public class ModelParserService {
                     .append(testDtoLiteral(field.type(), true))
                     .append(");\n");
         }
-
-        // relations intentionally skipped for now to keep generated tests simple and compile-safe
 
         return sb.toString();
     }
@@ -532,8 +571,6 @@ public class ModelParserService {
                     .append(");\n");
         }
 
-        // relations intentionally skipped for now
-
         return sb.toString();
     }
 
@@ -547,8 +584,6 @@ public class ModelParserService {
                     .append(testDtoLiteral(field.type(), false))
                     .append(");\n");
         }
-
-        // relations intentionally skipped for now
 
         return sb.toString();
     }
@@ -564,8 +599,6 @@ public class ModelParserService {
                     .append(");\n");
         }
 
-        // relations intentionally skipped for now
-
         return sb.toString();
     }
 
@@ -579,8 +612,6 @@ public class ModelParserService {
                     .append(dtoGetter(field.name()))
                     .append(");\n");
         }
-
-        // relations intentionally skipped for now
 
         return sb.toString();
     }
@@ -722,11 +753,9 @@ public class ModelParserService {
                 .toList();
 
         for (RelationDef relation : resolvableRelations) {
-
             String upperRelation = upperFirst(relation.field());
             String relationHelper = "create" + upperRelation + "IdThrough" + entity;
 
-            // CREATE WITHOUT
             sb.append("    @Test\n");
             sb.append("    void create").append(entity).append("Without").append(upperRelation).append("ShouldSucceed() {\n");
             sb.append(buildRequestAssignment("request", fields, null, null, Collections.emptyMap()));
@@ -744,17 +773,11 @@ public class ModelParserService {
             sb.append("        assertNotNull(id);\n");
             sb.append("    }\n\n");
 
-            // CREATE WITH EXISTING
             sb.append("    @Test\n");
             sb.append("    void create").append(entity).append("WithExisting").append(upperRelation).append("IdShouldReuseExisting")
                     .append(upperRelation).append("() {\n");
             sb.append("        String relationId = ").append(relationHelper).append("(\"seed-existing\");\n\n");
-            sb.append(buildRequestAssignment(
-                    "request",
-                    fields,
-                    relation,
-                    relationPayloadById("%s"),
-                    Collections.emptyMap()));
+            sb.append(buildRequestAssignment(fieldsAwareRequestVariable(), fields, relation, relationPayloadById("%s"), Collections.emptyMap()));
             sb.append("        request = request.formatted(relationId);\n\n");
             sb.append("        String entityId = given()\n");
             sb.append("                .auth().oauth2(token)\n");
@@ -779,7 +802,6 @@ public class ModelParserService {
             sb.append("        assertEquals(relationId, returnedRelationId);\n");
             sb.append("    }\n\n");
 
-            // CREATE WITH NEW
             sb.append("    @Test\n");
             sb.append("    void create").append(entity).append("WithNew").append(upperRelation).append("ShouldCreateNested")
                     .append(upperRelation).append("() {\n");
@@ -807,7 +829,6 @@ public class ModelParserService {
             sb.append("        assertNotNull(returnedRelationId);\n");
             sb.append("    }\n\n");
 
-            // UPDATE WITHOUT
             sb.append("    @Test\n");
             sb.append("    void update").append(entity).append("Without").append(upperRelation).append("ShouldSucceed() {\n");
             sb.append("        String entityId = create").append(entity).append("AndReturnId();\n\n");
@@ -823,18 +844,12 @@ public class ModelParserService {
             sb.append("                .statusCode(200);\n");
             sb.append("    }\n\n");
 
-            // UPDATE WITH EXISTING
             sb.append("    @Test\n");
             sb.append("    void update").append(entity).append("WithExisting").append(upperRelation).append("IdShouldReuseExisting")
                     .append(upperRelation).append("() {\n");
             sb.append("        String entityId = create").append(entity).append("AndReturnId();\n");
             sb.append("        String relationId = ").append(relationHelper).append("(\"seed-update-existing\");\n\n");
-            sb.append(buildRequestAssignment(
-                    "request",
-                    fields,
-                    relation,
-                    relationPayloadById("%s"),
-                    updatedOverrides(fields)));
+            sb.append(buildRequestAssignment("request", fields, relation, relationPayloadById("%s"), updatedOverrides(fields)));
             sb.append("        request = request.formatted(relationId);\n\n");
             sb.append("        given()\n");
             sb.append("                .auth().oauth2(token)\n");
@@ -857,7 +872,6 @@ public class ModelParserService {
             sb.append("        assertEquals(relationId, returnedRelationId);\n");
             sb.append("    }\n\n");
 
-            // UPDATE WITH NEW
             sb.append("    @Test\n");
             sb.append("    void update").append(entity).append("WithNew").append(upperRelation).append("ShouldCreateNested")
                     .append(upperRelation).append("() {\n");
@@ -884,7 +898,6 @@ public class ModelParserService {
             sb.append("        assertNotNull(returnedRelationId);\n");
             sb.append("    }\n\n");
 
-            // CREATE BLANK
             sb.append("    @Test\n");
             sb.append("    void create").append(entity).append("WithBlank").append(upperRelation).append("IdShouldCreateNested")
                     .append(upperRelation).append("() {\n");
@@ -903,7 +916,6 @@ public class ModelParserService {
             sb.append("        assertNotNull(entityId);\n");
             sb.append("    }\n\n");
 
-            // UPDATE BLANK
             sb.append("    @Test\n");
             sb.append("    void update").append(entity).append("WithBlank").append(upperRelation).append("IdShouldCreateNested")
                     .append(upperRelation).append("() {\n");
@@ -924,13 +936,16 @@ public class ModelParserService {
         return sb.toString();
     }
 
-    public String buildTestSearchSeedBody(List<FieldDef> fields) {
+    private String fieldsAwareRequestVariable() {
+        return "request";
+    }
 
+    public String buildTestSearchSeedBody(List<FieldDef> fields) {
         StringBuilder sb = new StringBuilder();
 
         for (FieldDef field : fields) {
             if ("name".equals(field.name())) {
-                continue; // to not duplicate
+                continue;
             }
 
             sb.append(",\n                  \"")
@@ -1036,8 +1051,6 @@ public class ModelParserService {
             sb.append("        assertNotNull(result);\n");
             sb.append("    }\n\n");
         }
-
-        // numeric-field external tests removed for same reason as internal tests above.
 
         return sb.toString();
     }
