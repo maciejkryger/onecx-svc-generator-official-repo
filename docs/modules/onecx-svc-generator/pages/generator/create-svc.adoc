@@ -44,13 +44,23 @@ java -jar onecx-svc-generator.jar create-svc \
   --package org.tkit.onecx.demo \
   --build true
 ----
-flag `--build true` will build the application after generation. If you want to build it manually, you can omit this flag and run `mvn clean install` in the generated directory.
 
-flag `--name` is used to specify the name of the generated service, which will be used as base for project name, artifact name and some essential application parts
+[cols="1,4", options="header"]
+|===
+|Flag |Description
 
-flag `--group` is used to specify the groupId of the generated service, which will be used as base for package name and pom as parent groupId
+|`--build true`
+|Builds the application after generation. If you want to build it manually, you can omit this flag and run `mvn clean install` in the generated directory.
 
-flag `--package` is used to specify the base package name of the generated service, which will be used as base for package name and some essential application parts
+|`--name`
+|Specifies the name of the generated service. The value is used as the base for the project name, artifact name, folder name, Helm metadata and application metadata.
+
+|`--group`
+|Specifies the `groupId` of the generated service. The value is used for the Maven project configuration, including the parent `groupId`.
+
+|`--package`
+|Specifies the base package name of the generated service. The value is used as the base package for generated application parts created from templates, such as controllers, DAOs, entities, mappers, services and exception mappers.
+|===
 
 .Excerpt of the build start output
 image::start_generating_with_autobuild.png[]
