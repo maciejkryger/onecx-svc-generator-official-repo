@@ -1,16 +1,16 @@
 package org.tkit.onecx.onecxsvcgen.commands;
 
+import jakarta.inject.Inject;
 import org.tkit.onecx.onecxsvcgen.model.ApiDef;
 import org.tkit.onecx.onecxsvcgen.model.FieldDef;
 import org.tkit.onecx.onecxsvcgen.model.RelationDef;
 import org.tkit.onecx.onecxsvcgen.service.BuildService;
+import org.tkit.onecx.onecxsvcgen.service.GitHubActionsService;
 import org.tkit.onecx.onecxsvcgen.service.LiquibaseChangelogService;
 import org.tkit.onecx.onecxsvcgen.service.ModelParserService;
 import org.tkit.onecx.onecxsvcgen.service.NamingService;
 import org.tkit.onecx.onecxsvcgen.service.OpenApiService;
 import org.tkit.onecx.onecxsvcgen.service.TemplateService;
-import org.tkit.onecx.onecxsvcgen.service.GitHubActionsService;
-import jakarta.inject.Inject;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 
@@ -118,13 +118,13 @@ public class AddEntityCommand implements Runnable {
             List<FieldDef> fields = models.parseFields(fieldsRaw);
             List<RelationDef> relations = models.parseRelations(relationsRaw);
 
-            String artifactId = projectPath.getFileName().toString();
-            String scopePrefix = naming.scopePrefixFromArtifactId(artifactId);
+            String projectName = projectPath.getFileName().toString();
+            String scopePrefix = naming.scopePrefixFromArtifactId(projectName);
 
             ApiDef api = new ApiDef(root, apiParent, apiField, apiParentCollection, apiPath, apiTag);
 
-            Path internalSpec = projectPath.resolve("src/main/openapi/" + artifactId + "-internal.yaml");
-            Path externalSpec = projectPath.resolve("src/main/openapi/" + artifactId + "-external-v1.yaml");
+            Path internalSpec = projectPath.resolve("src/main/openapi/" + projectName + "-internal.yaml");
+            Path externalSpec = projectPath.resolve("src/main/openapi/" + projectName + "-external-v1.yaml");
 
             openApi.addOrUpdateEntity(
                     internalSpec,
@@ -137,6 +137,10 @@ public class AddEntityCommand implements Runnable {
             );
 
             Map<String, Object> ctx = new HashMap<>();
+
+            ctx.put("name", projectName);
+            ctx.put("projectName", projectName);
+            ctx.put("artifactId", projectName);
 
             String entityField = naming.lowerCamel(entity);
             String resourcePath = api.path() != null ? api.path() : naming.pluralPath(entity);
@@ -154,6 +158,9 @@ public class AddEntityCommand implements Runnable {
             String externalApiInterface = naming.upperFirst(baseTag) + "V1Api";
 
             ctx.put("package", pkg);
+            ctx.put("packageName", pkg);
+            ctx.put("basePackage", pkg);
+
             ctx.put("entity", entity);
             ctx.put("entityField", entityField);
             ctx.put("resourcePath", resourcePath);
@@ -179,8 +186,19 @@ public class AddEntityCommand implements Runnable {
             ctx.put("generatedExternalSearchCriteria", entity + "SearchCriteriaDTOV1");
             ctx.put("externalOperationSuffix", "V1");
             ctx.put("externalMapperMappingImport", root ? "import org.mapstruct.Mapping;\n" : "");
-            ctx.put("externalMapperPageResultImports", root ? "import " + models.generatedInternalModelPackage(pkg) + "." + entity + "PageResultDTO;\nimport org.tkit.quarkus.jpa.daos.PageResult;\n" : "");
-            ctx.put("mapPageResultMethod", root ? "\n    @Mapping(target = \"removeStreamItem\", ignore = true)\n    " + entity + "PageResultDTO mapPageResult(PageResult<" + entity + "> pageResult);" : "");
+            ctx.put("externalMapperPageResultImports",
+                    root
+                            ? "import " + models.generatedInternalModelPackage(pkg) + "." + entity + "PageResultDTO;\n" +
+                              "import org.tkit.quarkus.jpa.daos.PageResult;\n"
+                            : ""
+            );
+            ctx.put("mapPageResultMethod",
+                    root
+                            ? "\n    @Mapping(target = \"removeStreamItem\", ignore = true)\n    " +
+                              entity + "PageResultDTO mapPageResult(PageResult<" + entity + "> pageResult);"
+                            : ""
+            );
+
             ctx.put("modelPackage", models.modelPackage(pkg));
             ctx.put("daoPackage", models.daoPackage(pkg));
             ctx.put("domainServicePackage", models.domainServicePackage(pkg));
@@ -191,6 +209,8 @@ public class AddEntityCommand implements Runnable {
             ctx.put("externalControllerPackage", models.externalControllerPackage(pkg));
             ctx.put("externalMapperPackage", models.externalMapperPackage(pkg));
 
+            // Entity/JPA/Liquibase fragments
+            ctx.put("jpaAttributeOverrides", models.buildJpaAttributeOverrides());
             ctx.put("fieldsDecl", models.buildFieldsDecl(fields));
             ctx.put("relationsDecl", models.buildRelationsDecl(relations, pkg));
             ctx.put("liquibaseColumns", models.buildLiquibaseColumns(fields, relations));
@@ -208,6 +228,7 @@ public class AddEntityCommand implements Runnable {
             ctx.put("testSearchCriteriaBody", models.buildTestSearchCriteriaBody(fields, entity + "SearchCriteriaDTO"));
             ctx.put("testSearchSeedBody", models.buildTestSearchSeedBody(fields));
             ctx.put("testExternalSearchCriteriaBody", models.buildTestExternalSearchCriteriaBody(fields, entity + "SearchCriteriaDTOV1"));
+
             ctx.put(
                     "testInternalControllerAdditionalMethods",
                     models.buildInternalControllerAdditionalMethods(entity, resourcePath, fields, relations)
@@ -245,6 +266,7 @@ public class AddEntityCommand implements Runnable {
                     base.resolve("domain/models/" + entity + ".java"),
                     ctx
             );
+
             templates.renderToFile(
                     root
                             ? "templates/entity/DAO.java.tpl"
@@ -261,26 +283,24 @@ public class AddEntityCommand implements Runnable {
                 );
             }
 
-            // INTERNAL runtime boundary
             templates.renderToFile(
                     "templates/entity/Mapper.java.tpl",
                     base.resolve("rs/internal/mappers/" + entity + "Mapper.java"),
                     ctx
             );
 
-            // INTERNAL exception mapper (standalone)
             renderIfMissing(
                     "templates/entity/InternalExceptionMapper.java.tpl",
                     base.resolve("rs/internal/mappers/InternalExceptionMapper.java"),
                     ctx
             );
 
-            // EXTERNAL runtime boundary
             templates.renderToFile(
                     "templates/entity/ExternalMapper.java.tpl",
                     base.resolve("rs/external/v1/mappers/" + entity + "Mapper.java"),
                     ctx
             );
+
             renderIfMissing(
                     "templates/entity/ExternalExceptionMapper.java.tpl",
                     base.resolve("rs/external/v1/mappers/ExternalExceptionMapper.java"),
@@ -293,6 +313,7 @@ public class AddEntityCommand implements Runnable {
                         base.resolve("rs/internal/controllers/" + entity + "Controller.java"),
                         ctx
                 );
+
                 templates.renderToFile(
                         "templates/entity/ExternalController.java.tpl",
                         base.resolve("rs/external/v1/controllers/" + entity + "Controller.java"),
@@ -300,11 +321,6 @@ public class AddEntityCommand implements Runnable {
                 );
             }
 
-            // TESTS
-
-            // always
-
-            // only for root entities with controllers
             if (root) {
                 renderIfMissing(
                         "templates/test/AbstractTest.java.tpl",
@@ -317,6 +333,7 @@ public class AddEntityCommand implements Runnable {
                         testBase.resolve("rs/internal/controllers/" + entity + "ControllerTest.java"),
                         ctx
                 );
+
                 renderIfMissing(
                         "templates/test/ExternalControllerTest.java.tpl",
                         testBase.resolve("rs/external/v1/controllers/" + entity + "ControllerTest.java"),
@@ -328,6 +345,7 @@ public class AddEntityCommand implements Runnable {
                         testBase.resolve("rs/internal/controllers/" + entity + "ControllerIT.java"),
                         ctx
                 );
+
                 renderIfMissing(
                         "templates/test/ExternalControllerIT.java.tpl",
                         testBase.resolve("rs/external/v1/controllers/" + entity + "ControllerIT.java"),
@@ -348,10 +366,12 @@ public class AddEntityCommand implements Runnable {
                         projectPath.resolve("src/main/resources/db/changelog/" + changelogFile),
                         changelogCtx
                 );
+
                 liquibase.registerInclude(projectPath, changelogFile);
             }
 
             System.out.println("✔ Generated domain layer for: " + entity);
+
             if (root) {
                 System.out.println("✔ Updated internal API/runtime (CRUD + search) and external-v1 API/runtime (get + search) for: " + entity);
                 System.out.println("✔ Generated controller, mapper and service tests for root entity: " + entity);
@@ -390,7 +410,6 @@ public class AddEntityCommand implements Runnable {
         Files.createDirectories(base.resolve("domain/models"));
         Files.createDirectories(base.resolve("domain/daos"));
         Files.createDirectories(base.resolve("domain/services"));
-        // no shared common mapper; internal/external mappers are standalone
         Files.createDirectories(base.resolve("rs/internal/controllers"));
         Files.createDirectories(base.resolve("rs/internal/mappers"));
         Files.createDirectories(base.resolve("rs/external/v1/controllers"));
@@ -401,7 +420,6 @@ public class AddEntityCommand implements Runnable {
     private void ensureTestStructure(Path testBase, Path projectPath) throws Exception {
         Files.createDirectories(testBase.resolve("rs/internal/controllers"));
         Files.createDirectories(testBase.resolve("rs/external/v1/controllers"));
-
         createFileIfMissing(projectPath.resolve("src/test/resources/application.properties"), "");
     }
 

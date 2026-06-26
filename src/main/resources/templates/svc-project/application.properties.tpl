@@ -4,6 +4,12 @@ quarkus.hibernate-orm.database.generation=validate
 quarkus.hibernate-orm.metrics.enabled=true
 quarkus.hibernate-orm.jdbc.timezone=UTC
 
+# Metadata
+onecx.generator.name={{name}}
+onecx.generator.group={{groupId}}
+onecx.generator.package={{package}}
+onecx.generator.artifact-id={{artifactId}}
+
 # --- datasource ---
 quarkus.datasource.db-kind=postgresql
 quarkus.datasource.jdbc.max-size=30

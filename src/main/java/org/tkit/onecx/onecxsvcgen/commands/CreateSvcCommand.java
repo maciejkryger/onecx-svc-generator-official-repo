@@ -16,11 +16,14 @@ import java.util.Map;
 @Command(name = "create-svc", description = "Generate a full OneCX-compliant Quarkus backend service")
 public class CreateSvcCommand implements Runnable {
 
-    @Option(names = "--name", required = true, description = "Artifact/repository name, e.g. onecx-demo-svc")
+    @Option(names = "--name", required = true, description = "Project/repository name, e.g. onecx-demo-svc")
     String name;
 
-    @Option(names = "--group", defaultValue = "org.tkit.onecx", description = "Maven groupId")
-    String group;
+    @Option(names = { "--group", "--group-id" }, defaultValue = "org.tkit.onecx", description = "Maven groupId")
+    String groupId;
+
+    @Option(names = "--artifact-id", description = "Maven artifactId (defaults to sanitized project name)")
+    String artifactId;
 
     @Option(names = "--package", required = true, description = "Base Java package")
     String pkg;
@@ -57,47 +60,55 @@ public class CreateSvcCommand implements Runnable {
         try {
             boolean parentProvided = parentVersion != null && !parentVersion.isBlank();
             if (!parentProvided) {
-                // when parent version is not provided, default to the current supported baseline
                 parentVersion = "3.1.0";
             }
 
-            // decide whether to apply new POM changes based on parent version
-            // If the resolved or provided parent version is >= 3.1.0 we enable the new POM layout;
-            // otherwise keep the legacy layout.
             boolean useNewPom = false;
             try {
                 String v = parentVersion.trim();
-                java.util.regex.Matcher m = java.util.regex.Pattern.compile("(\\d+)\\.(\\d+)(?:\\.(\\d+))?").matcher(v);
+                java.util.regex.Matcher m = java.util.regex.Pattern
+                        .compile("(\\d+)\\.(\\d+)(?:\\.(\\d+))?")
+                        .matcher(v);
+
                 if (m.find()) {
                     int major = Integer.parseInt(m.group(1));
                     int minor = Integer.parseInt(m.group(2));
                     int patch = m.group(3) != null ? Integer.parseInt(m.group(3)) : 0;
-                    int verNum = major * 10000 + minor * 100 + patch; // e.g. 3.1.0 -> 30100
-                    useNewPom = verNum >= (3 * 10000 + 1 * 100 + 0);
+                    int verNum = major * 10000 + minor * 100 + patch;
+                    useNewPom = verNum >= (3 * 10000 + 1 * 100);
                 }
             } catch (Exception ignore) {
                 useNewPom = false;
             }
 
+            String resolvedArtifactId = sanitizeArtifactId(name, artifactId);
+
             Path baseDir = (outputDir != null ? outputDir : Path.of(".")).toAbsolutePath().normalize();
-            Path root = baseDir.resolve(name).toAbsolutePath().normalize();
+            Path root = resolveProjectDir(baseDir, name);
             Files.createDirectories(root);
 
             String scopePrefix = naming.scopePrefixFromArtifactId(name);
 
             Map<String, Object> ctx = new HashMap<>();
             ctx.put("name", name);
+            ctx.put("projectName", name);
+
+            ctx.put("artifactId", resolvedArtifactId);
+
             ctx.put("dbName", name.replace("-", "_"));
-            ctx.put("group", group);
+            ctx.put("groupId", groupId);
+
             ctx.put("package", pkg);
+            ctx.put("packageName", pkg);
+            ctx.put("basePackage", pkg);
+
             ctx.put("parentVersion", parentVersion);
-            // project version for generated POMs (user requested override for all versions)
             ctx.put("projectVersion", "999-SNAPSHOT");
-            // packaging section to insert under <version> when using new POM layout
+
             ctx.put("packagingSection", useNewPom ? "<packaging>quarkus</packaging>\n    " : "");
-            // junit artifact ids depend on parent version
             ctx.put("junitArtifact", useNewPom ? "quarkus-junit" : "quarkus-junit5");
             ctx.put("junitMockitoArtifact", useNewPom ? "quarkus-junit-mockito" : "quarkus-junit5-mockito");
+
             ctx.put("scopePrefix", scopePrefix);
 
             ctx.put("generatedApiPackage", "gen." + pkg + ".rs.external.v1");
@@ -130,6 +141,8 @@ public class CreateSvcCommand implements Runnable {
             liquibase.ensureStructure(root);
 
             System.out.println("✔ Generated OneCX service: " + root);
+            System.out.println("✔ Project name: " + name);
+            System.out.println("✔ Artifact ID: " + resolvedArtifactId);
             System.out.println("✔ Parent version: " + parentVersion);
             System.out.println("✔ Scope prefix: " + scopePrefix);
 
@@ -140,5 +153,30 @@ public class CreateSvcCommand implements Runnable {
         } catch (Exception e) {
             throw new RuntimeException("create-svc failed", e);
         }
+    }
+
+    private String sanitizeArtifactId(String projectName, String artifactId) {
+        String raw = artifactId == null || artifactId.isBlank()
+                ? projectName
+                : artifactId;
+
+        String clean = raw.toLowerCase().replaceAll("[^a-z0-9.-]", "-");
+        String normalized = clean.replaceAll("-+", "-").replaceAll("^-|-$", "");
+
+        if (normalized.isBlank()) {
+            throw new IllegalArgumentException("Could not derive artifactId from input");
+        }
+
+        return normalized;
+    }
+
+    private Path resolveProjectDir(Path baseDir, String projectName) {
+        Path fileName = baseDir.getFileName();
+
+        if (fileName != null && projectName.equals(fileName.toString())) {
+            return baseDir;
+        }
+
+        return baseDir.resolve(projectName).toAbsolutePath().normalize();
     }
 }

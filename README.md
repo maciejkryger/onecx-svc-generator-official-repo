@@ -105,9 +105,10 @@ mvn clean package -Dquarkus.package.type=uber-jar
 ### 3.2. Generate a new service
 ```bash
 cd ../
-java -jar onecx-svc-generator/generator/target/onecx-svc-generator-1.0.0-runner.jar create-svc   \
+java -jar onecx-svc-generator/target/onecx-svc-generator-999-SNAPSHOT-runner.jar create-svc   \
   --name onecx-demo-svc   \
   --group org.tkit.onecx   \
+  --artifact-id artifact-demo-id   \
   --package org.tkit.onecx.demo
   --parent-version 3.2.0
 ```
@@ -115,7 +116,7 @@ java -jar onecx-svc-generator/generator/target/onecx-svc-generator-1.0.0-runner.
 ```bash 
 cd ../
 
-java -jar onecx-svc-generator/generator/target/onecx-svc-generator-1.0.0-runner.jar create-svc \
+java -jar onecx-svc-generator/target/onecx-svc-generator-999-SNAPSHOT-runner.jar create-svc \
   --name onecx-demo-svc \
   --group org.tkit.onecx \
   --package org.tkit.onecx.demo \
@@ -126,7 +127,7 @@ java -jar onecx-svc-generator/generator/target/onecx-svc-generator-1.0.0-runner.
 ```bash 
 cd ../
 
-java -jar onecx-svc-generator/generator/target/onecx-svc-generator-1.0.0-runner.jar create-svc \
+java -jar onecx-svc-generator/target/onecx-svc-generator-999-SNAPSHOT-runner.jar create-svc \
   --name onecx-demo-svc \
   --group org.tkit.onecx \
   --package org.tkit.onecx.demo \
@@ -137,7 +138,7 @@ java -jar onecx-svc-generator/generator/target/onecx-svc-generator-1.0.0-runner.
 ### 3.3. Add a root entity (creates API + controller + mapper + domain layer)
 ```bash
 cd ../
-java -jar onecx-svc-generator/generator/target/onecx-svc-generator-1.0.0-runner.jar add-entity \
+java -jar onecx-svc-generator/target/onecx-svc-generator-999-SNAPSHOT-runner.jar add-entity \
   --project /home/Maciej/projects/onecx/onecx-demo-svc \
   --package org.tkit.onecx.demo \
   --entity Product \
@@ -149,7 +150,7 @@ java -jar onecx-svc-generator/generator/target/onecx-svc-generator-1.0.0-runner.
 ### 3.4. Add a child entity/component (updates existing API schema, no standalone CRUD)
 ```bash
 cd ../
-java -jar onecx-svc-generator/generator/target/onecx-svc-generator-1.0.0-runner.jar add-entity \
+java -jar onecx-svc-generator/target/onecx-svc-generator-999-SNAPSHOT-runner.jar add-entity \
   --project /home/Maciej/projects/onecx/onecx-demo-svc \
   --package org.tkit.onecx.demo \
   --entity ProductItem \
@@ -164,7 +165,7 @@ java -jar onecx-svc-generator/generator/target/onecx-svc-generator-1.0.0-runner.
 ### 3.5. Add entities in batch from a model definition file
 ```bash
 cd ../
-java -jar onecx-svc-generator/generator/target/onecx-svc-generator-1.0.0-runner.jar batch-model \
+java -jar onecx-svc-generator/target/onecx-svc-generator-999-SNAPSHOT-runner.jar batch-model \
   --project /home/Maciej/projects/onecx/onecx-demo-svc \
   --package org.tkit.onecx.demo \
   --model /home/Maciej/projects/onecx/onecx-svc-generator/generator/examples/model.yaml \
@@ -174,7 +175,7 @@ java -jar onecx-svc-generator/generator/target/onecx-svc-generator-1.0.0-runner.
 #### with Liquibase diff generation for existing entities - generates changelog with missing tables/columns based on the model definition:
 ```bash
 cd ../
-java -jar onecx-svc-generator/generator/target/onecx-svc-generator-1.0.0-runner.jar batch-model \
+java -jar /home/Maciej/projects/onecx/onecx-svc-generator-official-repo/target/onecx-svc-generator-999-SNAPSHOT-runner.jar batch-model \
   --project /home/Maciej/projects/onecx/onecx-demo-svc \
   --package org.tkit.onecx.demo \
   --model /home/Maciej/projects/onecx/onecx-svc-generator/generator/examples/model.yaml \
@@ -278,10 +279,14 @@ curl --request POST \
 
 ## 5. After a release is published:
 ```bash
-jbang onecx-svc-generator@maciejkryger/onecx-svc-generator create-svc \
+curl -L -o onecx-svc-generator.jar \
+https://github.com/onecx/onecx-svc-generator/releases/download/v0.1.1/onecx-svc-generator.jar
+
+java -jar onecx-svc-generator.jar create-svc \
   --name onecx-demo-svc \
   --group org.tkit.onecx \
-  --package org.tkit.onecx.demo
+  --package org.tkit.onecx.demo \
+  --build true
 ```
 ## 6. Appeared issues 
 

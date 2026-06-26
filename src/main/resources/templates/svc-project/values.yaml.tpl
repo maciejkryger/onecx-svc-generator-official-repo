@@ -1,5 +1,5 @@
 app:
-  name: svc
+  name: {{artifactId}}
   image:
     repository: "onecx/{{name}}"
   db:
@@ -13,5 +13,5 @@ app:
             defaultClientScopes: [ {{scopePrefix}}:read ]
     microservice:
       spec:
-        description: "OneCX backend service"
-        name: "{{name}}"
+        description: "{{name}} - OneCX backend service"
+        name: "{{artifactId}}"
