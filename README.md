@@ -110,7 +110,6 @@ java -jar onecx-svc-generator/target/onecx-svc-generator-999-SNAPSHOT-runner.jar
   --group org.tkit.onecx   \
   --artifact-id artifact-demo-id   \
   --package org.tkit.onecx.demo
-  --parent-version 3.2.0
 ```
 #### with autobuild - recommended for development, as it compiles the generated code after each change:
 ```bash 
@@ -123,17 +122,14 @@ java -jar onecx-svc-generator/target/onecx-svc-generator-999-SNAPSHOT-runner.jar
   --build true
 ```
 
-#### with autobuild and stable specific parent version - recommended for development, and this parent version is last with java 21:
-```bash 
-cd ../
+**Note on Versions:**
+The generator automatically resolves the latest versions from GitHub for:
+- `onecx-quarkus3-parent` (Maven parent POM)
+- `docker-quarkus-jvm` (JVM Docker image)
+- `docker-quarkus-native` (Native Docker image)
+- `helm-quarkus-app` (Helm chart)
 
-java -jar onecx-svc-generator/target/onecx-svc-generator-999-SNAPSHOT-runner.jar create-svc \
-  --name onecx-demo-svc \
-  --group org.tkit.onecx \
-  --package org.tkit.onecx.demo \
-  --build true \
-  --parent-version 2.5.0
-```
+If GitHub API is unavailable, sensible defaults are used. The resolved versions are displayed during generation with source information (latest vs default).
 
 ### 3.3. Add a root entity (creates API + controller + mapper + domain layer)
 ```bash
