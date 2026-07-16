@@ -1,17 +1,12 @@
 package org.tkit.onecx.onecxsvcgen.commands;
 
-import org.tkit.onecx.onecxsvcgen.service.BuildService;
-import org.tkit.onecx.onecxsvcgen.service.LiquibaseChangelogService;
-import org.tkit.onecx.onecxsvcgen.service.NamingService;
-import org.tkit.onecx.onecxsvcgen.service.TemplateService;
 import jakarta.inject.Inject;
+import org.tkit.onecx.onecxsvcgen.model.CreateSvcRequest;
+import org.tkit.onecx.onecxsvcgen.service.GeneratorService;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.HashMap;
-import java.util.Map;
 
 @Command(name = "create-svc", description = "Generate a full OneCX-compliant Quarkus backend service")
 public class CreateSvcCommand implements Runnable {
@@ -28,9 +23,6 @@ public class CreateSvcCommand implements Runnable {
     @Option(names = "--package", required = true, description = "Base Java package")
     String pkg;
 
-    @Option(names = "--parent-version", description = "onecx-quarkus3-parent version; if omitted defaults to 3.1.0")
-    String parentVersion;
-
     @Option(names = "--output-dir", description = "Directory where the service project should be generated")
     Path outputDir;
 
@@ -44,139 +36,15 @@ public class CreateSvcCommand implements Runnable {
     boolean build;
 
     @Inject
-    TemplateService templates;
-
-    @Inject
-    NamingService naming;
-
-    @Inject
-    BuildService buildService;
-
-    @Inject
-    LiquibaseChangelogService liquibase;
+    GeneratorService generatorService;
 
     @Override
     public void run() {
         try {
-            boolean parentProvided = parentVersion != null && !parentVersion.isBlank();
-            if (!parentProvided) {
-                parentVersion = "3.1.0";
-            }
-
-            boolean useNewPom = false;
-            try {
-                String v = parentVersion.trim();
-                java.util.regex.Matcher m = java.util.regex.Pattern
-                        .compile("(\\d+)\\.(\\d+)(?:\\.(\\d+))?")
-                        .matcher(v);
-
-                if (m.find()) {
-                    int major = Integer.parseInt(m.group(1));
-                    int minor = Integer.parseInt(m.group(2));
-                    int patch = m.group(3) != null ? Integer.parseInt(m.group(3)) : 0;
-                    int verNum = major * 10000 + minor * 100 + patch;
-                    useNewPom = verNum >= (3 * 10000 + 1 * 100);
-                }
-            } catch (Exception ignore) {
-                useNewPom = false;
-            }
-
-            String resolvedArtifactId = sanitizeArtifactId(name, artifactId);
-
-            Path baseDir = (outputDir != null ? outputDir : Path.of(".")).toAbsolutePath().normalize();
-            Path root = resolveProjectDir(baseDir, name);
-            Files.createDirectories(root);
-
-            String scopePrefix = naming.scopePrefixFromArtifactId(name);
-
-            Map<String, Object> ctx = new HashMap<>();
-            ctx.put("name", name);
-            ctx.put("projectName", name);
-
-            ctx.put("artifactId", resolvedArtifactId);
-
-            ctx.put("dbName", name.replace("-", "_"));
-            ctx.put("groupId", groupId);
-
-            ctx.put("package", pkg);
-            ctx.put("packageName", pkg);
-            ctx.put("basePackage", pkg);
-
-            ctx.put("parentVersion", parentVersion);
-            ctx.put("projectVersion", "999-SNAPSHOT");
-
-            ctx.put("packagingSection", useNewPom ? "<packaging>quarkus</packaging>\n    " : "");
-            ctx.put("junitArtifact", useNewPom ? "quarkus-junit" : "quarkus-junit5");
-            ctx.put("junitMockitoArtifact", useNewPom ? "quarkus-junit-mockito" : "quarkus-junit5-mockito");
-
-            ctx.put("scopePrefix", scopePrefix);
-
-            ctx.put("generatedApiPackage", "gen." + pkg + ".rs.external.v1");
-            ctx.put("generatedModelPackage", "gen." + pkg + ".rs.external.v1.model");
-            ctx.put("generatedInternalApiPackage", "gen." + pkg + ".rs.internal");
-            ctx.put("generatedInternalModelPackage", "gen." + pkg + ".rs.internal.model");
-
-            templates.renderToFile("templates/svc-project/pom.xml.tpl", root.resolve("pom.xml"), ctx);
-            templates.renderToFile("templates/svc-project/gitignore.tpl", root.resolve(".gitignore"), ctx);
-            templates.renderToFile("templates/svc-project/application.properties.tpl", root.resolve("src/main/resources/application.properties"), ctx);
-            templates.renderToFile("templates/svc-project/Dockerfile.jvm.tpl", root.resolve("src/main/docker/Dockerfile.jvm"), ctx);
-            templates.renderToFile("templates/svc-project/Dockerfile.native.tpl", root.resolve("src/main/docker/Dockerfile.native"), ctx);
-            templates.renderToFile("templates/svc-project/Chart.yaml.tpl", root.resolve("src/main/helm/Chart.yaml"), ctx);
-            templates.renderToFile("templates/svc-project/values.yaml.tpl", root.resolve("src/main/helm/values.yaml"), ctx);
-            templates.renderToFile("templates/entity/Liquibase-changelog.xml.tpl", root.resolve("src/main/resources/db/changeLog.xml"), ctx);
-
-            Files.createDirectories(root.resolve("src/main/resources/db/changelog"));
-
-            templates.renderToFile(
-                    "templates/svc-project/openapi-skeleton.yaml.tpl",
-                    root.resolve("src/main/openapi/" + name + "-internal.yaml"),
-                    ctx
-            );
-            templates.renderToFile(
-                    "templates/svc-project/openapi-skeleton.yaml.tpl",
-                    root.resolve("src/main/openapi/" + name + "-external-v1.yaml"),
-                    ctx
-            );
-
-            liquibase.ensureStructure(root);
-
-            System.out.println("✔ Generated OneCX service: " + root);
-            System.out.println("✔ Project name: " + name);
-            System.out.println("✔ Artifact ID: " + resolvedArtifactId);
-            System.out.println("✔ Parent version: " + parentVersion);
-            System.out.println("✔ Scope prefix: " + scopePrefix);
-
-            if (build) {
-                System.out.println("▶ Build requested, starting Maven build...");
-                buildService.runMavenBuild(root);
-            }
+            Path root = generatorService.generate(new CreateSvcRequest(name, groupId, artifactId, pkg, outputDir, build));
+            System.out.println("✔ Generated OneCX service in: " + root.toAbsolutePath());
         } catch (Exception e) {
             throw new RuntimeException("create-svc failed", e);
         }
-    }
-
-    private String sanitizeArtifactId(String projectName, String artifactId) {
-        String raw = artifactId == null || artifactId.isBlank()
-                ? projectName
-                : artifactId;
-
-        String clean = raw.toLowerCase().replaceAll("[^a-z0-9.-]", "-");
-        String normalized = clean.replaceAll("-+", "-").replaceAll("^-|-$", "");
-
-        if (normalized.isBlank()) {
-            throw new IllegalArgumentException("Could not derive artifactId from input");
-        }
-
-        return normalized;
-    }
-
-    private Path resolveProjectDir(Path baseDir, String projectName) {
-        Path fileName = baseDir.getFileName();
-
-        if (fileName != null && projectName.equals(fileName.toString())) {
-            return baseDir;
-        }
-
-        return baseDir.resolve(projectName).toAbsolutePath().normalize();
     }
 }

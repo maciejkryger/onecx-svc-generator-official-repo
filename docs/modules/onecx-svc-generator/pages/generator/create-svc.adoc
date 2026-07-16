@@ -47,6 +47,18 @@ java -jar onecx-svc-generator.jar create-svc \
   --package org.tkit.onecx.demo \
   --build true
 ----
+
+[IMPORTANT]
+====
+The generator automatically fetches and uses the latest versions from GitHub for:
+- `onecx-quarkus3-parent` (Maven parent POM)
+- `docker-quarkus-jvm` (JVM Docker image)
+- `docker-quarkus-native` (Native Docker image)
+- `helm-quarkus-app` (Helm chart)
+
+If GitHub API is unavailable, well-tested default versions are used as fallback. The resolved versions are displayed during generation with source information.
+====
+
 [cols="1,4", options="header"]
 |===
 |Flag |Description
@@ -63,8 +75,6 @@ java -jar onecx-svc-generator.jar create-svc \
 |`--package`
 |Specifies the base Java package name of the generated service. The value is used as the base package for generated application parts created from templates, such as controllers, DAOs, entities, mappers, services, exception mappers and tests.
 
-|`--parent-version`
-|Specifies the `onecx-quarkus3-parent` version used by the generated service project. If omitted, the generator defaults to the currently supported baseline version.
 
 |`--output-dir`
 |Specifies the parent output directory where the generated service project directory will be created. The generator creates a project folder inside this directory using the value of `--name`.
