@@ -36,20 +36,27 @@ public class LatestVersionResolver {
     }
 
     public String resolveLatest(String ownerAndRepo, String fallback) {
-        return resolveLatestWithSource(ownerAndRepo, fallback).version();
+        return resolveLatest(ownerAndRepo, fallback, null);
+    }
+
+    public String resolveLatest(String ownerAndRepo, String fallback, String githubToken) {
+        return resolveLatestWithSource(ownerAndRepo, fallback, githubToken).version();
     }
 
     public ResolvedVersion resolveLatestWithSource(String ownerAndRepo, String fallback) {
+        return resolveLatestWithSource(ownerAndRepo, fallback, null);
+    }
+
+    public ResolvedVersion resolveLatestWithSource(String ownerAndRepo, String fallback, String githubToken) {
         try {
             String url = API_BASE.formatted(ownerAndRepo);
             HttpRequest.Builder requestBuilder = HttpRequest.newBuilder(URI.create(url))
                     .header("Accept", "application/vnd.github+json")
                     .header("X-GitHub-Api-Version", "2022-11-28");
 
-            // Add authentication if GitHub token is provided
-            String gitHubToken = System.getenv("GITHUB_TOKEN");
-            if (gitHubToken != null && !gitHubToken.isBlank()) {
-                requestBuilder.header("Authorization", "Bearer " + gitHubToken);
+            String effectiveToken = resolveToken(githubToken);
+            if (effectiveToken != null && !effectiveToken.isBlank()) {
+                requestBuilder.header("Authorization", "Bearer " + effectiveToken);
             }
 
             HttpRequest request = requestBuilder.GET().build();
@@ -61,8 +68,8 @@ public class LatestVersionResolver {
                     return new ResolvedVersion(normalize(tag), Source.LATEST);
                 }
             } else if (response.statusCode() == 403) {
-                System.err.println("⚠ GitHub API rate limit (403) for " + ownerAndRepo +
-                    ". Set GITHUB_TOKEN env var to increase limit to 5000 req/hour.");
+                System.err.println("⚠ GitHub API rate limit (403) for " + ownerAndRepo
+                        + ". Pass --github-token (or set GITHUB_TOKEN) to increase limit to 5000 req/hour.");
             } else {
                 System.err.println("⚠ GitHub API returned status " + response.statusCode() + " for " + ownerAndRepo);
             }
@@ -77,6 +84,13 @@ public class LatestVersionResolver {
 
     private String normalize(String raw) {
         return raw.trim().replaceFirst("^[vV]", "");
+    }
+
+    private String resolveToken(String explicitToken) {
+        if (explicitToken != null && !explicitToken.isBlank()) {
+            return explicitToken;
+        }
+        return System.getenv("GITHUB_TOKEN");
     }
 }
 

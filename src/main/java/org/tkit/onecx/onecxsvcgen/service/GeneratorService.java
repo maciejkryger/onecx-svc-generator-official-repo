@@ -39,10 +39,14 @@ public class GeneratorService {
     LatestVersionResolver latestVersionResolver;
 
     public Path generate(CreateSvcRequest request) throws Exception {
-        LatestVersionResolver.ResolvedVersion parentResolved = latestVersionResolver.resolveLatestWithSource(PARENT_REPO, DEFAULT_PARENT_VERSION);
-        LatestVersionResolver.ResolvedVersion dockerJvmResolved = latestVersionResolver.resolveLatestWithSource(DOCKER_JVM_REPO, DEFAULT_DOCKER_VERSION);
-        LatestVersionResolver.ResolvedVersion dockerNativeResolved = latestVersionResolver.resolveLatestWithSource(DOCKER_NATIVE_REPO, DEFAULT_DOCKER_VERSION);
-        LatestVersionResolver.ResolvedVersion helmResolved = latestVersionResolver.resolveLatestWithSource(HELM_REPO, DEFAULT_HELM_VERSION);
+        LatestVersionResolver.ResolvedVersion parentResolved = latestVersionResolver.resolveLatestWithSource(PARENT_REPO,
+                DEFAULT_PARENT_VERSION, request.githubToken());
+        LatestVersionResolver.ResolvedVersion dockerJvmResolved = latestVersionResolver.resolveLatestWithSource(
+                DOCKER_JVM_REPO, DEFAULT_DOCKER_VERSION, request.githubToken());
+        LatestVersionResolver.ResolvedVersion dockerNativeResolved = latestVersionResolver.resolveLatestWithSource(
+                DOCKER_NATIVE_REPO, DEFAULT_DOCKER_VERSION, request.githubToken());
+        LatestVersionResolver.ResolvedVersion helmResolved = latestVersionResolver.resolveLatestWithSource(HELM_REPO,
+                DEFAULT_HELM_VERSION, request.githubToken());
 
         String parentVersion = parentResolved.version();
         String dockerJvmVersion = dockerJvmResolved.version();

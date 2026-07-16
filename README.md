@@ -129,7 +129,19 @@ The generator automatically resolves the latest versions from GitHub for:
 - `docker-quarkus-native` (Native Docker image)
 - `helm-quarkus-app` (Helm chart)
 
-If GitHub API is unavailable, sensible defaults are used. The resolved versions are displayed during generation with source information (latest vs default).
+Without authentication GitHub allows 60 API requests/hour. To increase this to 5000/hour, set your GitHub token as an environment variable before running the generator:
+```bash
+export GITHUB_TOKEN="ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+```
+If your environment uses a different variable name or you prefer not to use an env var, pass the token directly with the `--github-token` flag:
+```bash
+java -jar onecx-svc-generator.jar create-svc \
+  --name onecx-demo-svc \
+  --group org.tkit.onecx \
+  --package org.tkit.onecx.demo \
+  --github-token ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxx
+```
+If GitHub API is unavailable or rate-limited and no token is provided, sensible defaults are used as fallback. The resolved versions are always displayed during generation with their source (`latest` vs `as default`).
 
 ### 3.3. Add a root entity (creates API + controller + mapper + domain layer)
 ```bash

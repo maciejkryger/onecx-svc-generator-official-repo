@@ -51,12 +51,33 @@ java -jar onecx-svc-generator.jar create-svc \
 [IMPORTANT]
 ====
 The generator automatically fetches and uses the latest versions from GitHub for:
-- `onecx-quarkus3-parent` (Maven parent POM)
-- `docker-quarkus-jvm` (JVM Docker image)
-- `docker-quarkus-native` (Native Docker image)
-- `helm-quarkus-app` (Helm chart)
 
-If GitHub API is unavailable, well-tested default versions are used as fallback. The resolved versions are displayed during generation with source information.
+* `onecx-quarkus3-parent` (Maven parent POM)
+* `docker-quarkus-jvm` (JVM Docker image)
+* `docker-quarkus-native` (Native Docker image)
+* `helm-quarkus-app` (Helm chart)
+
+Without authentication, GitHub allows 60 API requests/hour.
+To increase this to 5 000 requests/hour, set the `GITHUB_TOKEN` environment variable before running the generator:
+
+[source,bash]
+----
+export GITHUB_TOKEN="ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+----
+
+If your environment uses a different variable name, or you prefer not to rely on an env var, pass the token directly using the `--github-token` flag:
+
+[source,bash]
+----
+java -jar onecx-svc-generator.jar create-svc \
+  --name onecx-demo-svc \
+  --group org.tkit.onecx \
+  --package org.tkit.onecx.demo \
+  --github-token ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxx
+----
+
+If GitHub API is unavailable or rate-limited and no token is provided, well-tested default versions are used as fallback.
+The resolved versions are always displayed during generation, annotated with `(latest)` or `(as default)`.
 ====
 
 [cols="1,4", options="header"]
@@ -78,6 +99,9 @@ If GitHub API is unavailable, well-tested default versions are used as fallback.
 
 |`--output-dir`
 |Specifies the parent output directory where the generated service project directory will be created. The generator creates a project folder inside this directory using the value of `--name`.
+
+|`--github-token`
+|Optional GitHub token used when resolving latest dependency versions from GitHub API. Use this when your environment does not provide `GITHUB_TOKEN` or uses a different variable name.
 
 |`--build true`
 |Builds the generated service project after generation by running Maven in the generated project directory. If you want to build it manually, you can omit this flag and run `mvn clean package` or `mvn clean install` inside the generated directory.

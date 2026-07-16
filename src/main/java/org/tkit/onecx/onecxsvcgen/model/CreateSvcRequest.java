@@ -8,6 +8,8 @@ public record CreateSvcRequest(
         String artifactId,
         String pkg,
         Path outputDir,
+        String githubToken,
         boolean build
 ) {
 }
+

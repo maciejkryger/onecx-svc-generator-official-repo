@@ -39,6 +39,7 @@ class GeneratorServiceTest {
                 "onecx-demo-svc",
                 "org.tkit.onecx.demo",
                 outputDir,
+                null,
                 false
         ));
 
@@ -85,6 +86,7 @@ class GeneratorServiceTest {
                 "onecx-legacy-svc",
                 "org.tkit.onecx.legacy",
                 outputDir,
+                null,
                 false
         ));
 
@@ -126,7 +128,7 @@ class GeneratorServiceTest {
         }
 
         @Override
-        public ResolvedVersion resolveLatestWithSource(String ownerAndRepo, String fallback) {
+        public ResolvedVersion resolveLatestWithSource(String ownerAndRepo, String fallback, String githubToken) {
             requestedRepos.add(ownerAndRepo);
             String value = versions.getOrDefault(ownerAndRepo, fallback);
             Source source = versions.containsKey(ownerAndRepo) ? Source.LATEST : Source.DEFAULT;
@@ -134,4 +136,5 @@ class GeneratorServiceTest {
         }
     }
 }
+
 

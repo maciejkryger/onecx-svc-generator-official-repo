@@ -26,6 +26,9 @@ public class CreateSvcCommand implements Runnable {
     @Option(names = "--output-dir", description = "Directory where the service project should be generated")
     Path outputDir;
 
+    @Option(names = "--github-token", description = "GitHub token used to resolve latest dependency versions")
+    String githubToken;
+
     @Option(
             names = "--build",
             defaultValue = "false",
@@ -41,7 +44,8 @@ public class CreateSvcCommand implements Runnable {
     @Override
     public void run() {
         try {
-            Path root = generatorService.generate(new CreateSvcRequest(name, groupId, artifactId, pkg, outputDir, build));
+            Path root = generatorService.generate(new CreateSvcRequest(name, groupId, artifactId, pkg, outputDir, githubToken,
+                    build));
             System.out.println("✔ Generated OneCX service in: " + root.toAbsolutePath());
         } catch (Exception e) {
             throw new RuntimeException("create-svc failed", e);
