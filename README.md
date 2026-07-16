@@ -59,7 +59,7 @@ onecx-svc-generator/
 │  │        │  ├─ NonRootDAO.java.tpl
 │  │        │  └─ Service.java.tpl
 │  │        ├─ github/
-│  │        │  ├─ dependabot.yml.tpl
+│  │        │  ├─ renovate.json.tpl
 │  │        │  └─ workflows/
 │  │        │     ├─ build.yml.tpl
 │  │        │     ├─ build-branch.yml.tpl

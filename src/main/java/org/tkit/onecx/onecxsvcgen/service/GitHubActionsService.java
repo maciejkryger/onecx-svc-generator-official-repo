@@ -36,10 +36,10 @@ public class GitHubActionsService {
             render("security.yml.tpl", workflows, "security.yml", ctx);
             render("sonar-pr.yml.tpl", workflows, "sonar-pr.yml", ctx);
 
-            // dependabot
+            // renovate
             templates.renderToFile(
-                    "templates/github/dependabot.yml.tpl",
-                    github.resolve("dependabot.yml"),
+                    "templates/github/renovate.json.tpl",
+                    github.resolve("renovate.json"),
                     ctx
             );
 
