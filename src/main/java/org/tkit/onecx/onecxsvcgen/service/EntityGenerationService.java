@@ -20,6 +20,9 @@ public class EntityGenerationService {
     EntityTemplateWriter templateWriter;
 
     @Inject
+    ParentMapperSyncService parentMapperSyncService;
+
+    @Inject
     GenerationLogService generationLogService;
 
     public void generateEntity(Path projectPath,
@@ -46,6 +49,7 @@ public class EntityGenerationService {
         Path testBase = projectPath.resolve("src/test/java/" + pkg.replace('.', '/'));
 
         templateWriter.writeEntityFiles(base, testBase, entityDef.name(), entityDef.aggregateRoot(), ctx);
+        parentMapperSyncService.syncParentMappers(projectPath, pkg, entityDef.api());
         generationLogService.logEntityResult(entityDef);
     }
 }

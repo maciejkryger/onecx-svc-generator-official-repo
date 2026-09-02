@@ -1,8 +1,10 @@
 entities:
-  - name: Category
+  - name: ProductItem
     aggregateRoot: false
     fields:
       - name:String
+      - quantity:Integer
+      - position:Integer
 
   - name: Product
     aggregateRoot: true
@@ -10,4 +12,4 @@ entities:
       - name:String
       - price:BigDecimal
     relations:
-      - category:ManyToOne:Category
+      - productItems:ManyToOne:ProductItem
