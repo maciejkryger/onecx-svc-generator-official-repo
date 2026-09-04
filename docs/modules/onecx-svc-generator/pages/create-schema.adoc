@@ -36,7 +36,7 @@ java -jar onecx-svc-generator.jar add-entity \
   --project onecx-demo-svc \
   --package org.tkit.onecx.demo \
   --entity ProductItem \
-  --fields quantity:Integer,position:Integer \
+  --fields name:String,quantity:Integer,position:Integer \
   --root false \
   --api-parent Product \
   --api-field items \
@@ -58,10 +58,12 @@ https://github.com/onecx/onecx-svc-generator/blob/main/examples/model.yaml
 [source,yml]
 ----
 entities:
-  - name: Category
+  - name: ProductItem
     aggregateRoot: false
     fields:
       - name:String
+      - quantity:Integer
+      - position:Integer
 
   - name: Product
     aggregateRoot: true
@@ -69,7 +71,7 @@ entities:
       - name:String
       - price:BigDecimal
     relations:
-      - category:ManyToOne:Category
+      - productItems:ManyToOne:ProductItem
 ----
 In this example, two entities are defined - `Category` and `Product`. `Product` is defined as an aggregate root entity, while `Category` is not. The `Product` entity has two fields - `name` and `price`, while the `Category` entity has one field - `name`. Additionally, a relation is defined between `Product` and `Category`, where a product can belong to one category (ManyToOne relation). Generator is adding relation as annotation, so you can use any relation you want, generator can build relations as below:
 - OneToOne

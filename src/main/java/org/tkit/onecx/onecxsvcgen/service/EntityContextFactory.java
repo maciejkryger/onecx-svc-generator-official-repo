@@ -75,19 +75,20 @@ public class EntityContextFactory {
         ctx.put("generatedExternalApiInterface", externalApiInterface);
         ctx.put("generatedExternalDto", entity + "DTOV1");
         ctx.put("generatedExternalSearchCriteria", entity + "SearchCriteriaDTOV1");
+        ctx.put("generatedExternalPageResultDto", entity + "PageResultDTOV1");
         ctx.put("externalOperationSuffix", "V1");
 
         ctx.put("externalMapperMappingImport", root ? "import org.mapstruct.Mapping;\n" : "");
         ctx.put("externalMapperPageResultImports",
                 root
-                        ? "import " + models.generatedInternalModelPackage(pkg) + "." + entity + "PageResultDTO;\n"
+                        ? "import " + models.generatedModelPackage(pkg) + "." + entity + "PageResultDTOV1;\n"
                         + "import org.tkit.quarkus.jpa.daos.PageResult;\n"
                         : ""
         );
         ctx.put("mapPageResultMethod",
                 root
                         ? "\n    @Mapping(target = \"removeStreamItem\", ignore = true)\n    "
-                        + entity + "PageResultDTO mapPageResult(PageResult<" + entity + "> pageResult);"
+                        + entity + "PageResultDTOV1 mapPageResult(PageResult<" + entity + "> pageResult);"
                         : ""
         );
 
