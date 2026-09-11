@@ -106,7 +106,7 @@ mvn clean package -Dquarkus.package.type=uber-jar
 cd ../
 java -jar onecx-svc-generator/target/onecx-svc-generator-999-SNAPSHOT-runner.jar create-svc   \
   --name onecx-demo-svc   \
-  --group org.tkit.onecx   \
+  --group-id org.tkit.onecx   \
   --artifact-id artifact-demo-id   \
   --package org.tkit.onecx.demo
 ```
@@ -115,7 +115,7 @@ java -jar onecx-svc-generator/target/onecx-svc-generator-999-SNAPSHOT-runner.jar
 cd ../
 java -jar onecx-svc-generator/target/onecx-svc-generator-999-SNAPSHOT-runner.jar create-svc \
   --name onecx-demo-svc \
-  --group org.tkit.onecx \
+  --group-id org.tkit.onecx \
   --package org.tkit.onecx.demo \
   --build true
 ```
@@ -278,7 +278,7 @@ https://github.com/onecx/onecx-svc-generator/releases/download/v0.1.1/onecx-svc-
 
 java -jar onecx-svc-generator.jar create-svc \
   --name onecx-demo-svc \
-  --group org.tkit.onecx \
+  --group-id org.tkit.onecx \
   --package org.tkit.onecx.demo \
   --build true
 ```

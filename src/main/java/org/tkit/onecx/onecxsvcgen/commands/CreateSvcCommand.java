@@ -14,7 +14,7 @@ public class CreateSvcCommand implements Runnable {
     @Option(names = "--name", required = true, description = "Project/repository name, e.g. onecx-demo-svc")
     String name;
 
-    @Option(names = { "--group", "--group-id" }, defaultValue = "org.tkit.onecx", description = "Maven groupId")
+    @Option(names = { "--group-id" }, defaultValue = "org.tkit.onecx", description = "Maven groupId")
     String groupId;
 
     @Option(names = "--artifact-id", description = "Maven artifactId (defaults to sanitized project name)")
