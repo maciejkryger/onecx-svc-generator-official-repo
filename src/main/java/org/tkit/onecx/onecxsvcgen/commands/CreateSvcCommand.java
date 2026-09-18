@@ -35,13 +35,19 @@ public class CreateSvcCommand implements Runnable {
     )
     boolean build;
 
+    @Option(
+            names = { "--template-dir" },
+            description = "Directory containing custom template overrides")
+    Path templateDir;
+
     @Inject
     GeneratorService generatorService;
 
     @Override
     public void run() {
         try {
-            Path root = generatorService.generate(new CreateSvcRequest(name, groupId, artifactId, pkg, outputDir, build));
+            Path root = generatorService.generate(
+                    new CreateSvcRequest(name, groupId, artifactId, pkg, outputDir, build), templateDir);
             System.out.println("✔ Generated OneCX service in: " + root.toAbsolutePath());
         } catch (Exception e) {
             throw new RuntimeException("create-svc failed", e);

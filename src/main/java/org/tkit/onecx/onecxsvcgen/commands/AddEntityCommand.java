@@ -92,6 +92,11 @@ public class AddEntityCommand implements Runnable {
     )
     boolean liquibaseDiff;
 
+    @Option(
+            names = { "--template-dir" },
+            description = "Directory containing custom template overrides")
+    Path templateDir;
+
     @Inject
     TemplateService templates;
 
@@ -150,7 +155,8 @@ public class AddEntityCommand implements Runnable {
                     scopePrefix,
                     internalSpec,
                     externalSpec,
-                    entityDef
+                    entityDef,
+                    templateDir
             );
 
             String changelogFile = liquibase.entityFileName(entity);
@@ -159,7 +165,7 @@ public class AddEntityCommand implements Runnable {
                 Map<String, Object> changelogCtx = new HashMap<>();
                 changelogCtx.put("liquibaseChangeSets", models.buildLiquibaseChangeSet(entity, fields, relations));
 
-                templates.renderToFile(
+                templates.renderToFile( templateDir,
                         "templates/entity/Liquibase-changeset.xml.tpl",
                         projectPath.resolve("src/main/resources/db/changelog/" + changelogFile),
                         changelogCtx
@@ -183,7 +189,7 @@ public class AddEntityCommand implements Runnable {
             }
 
             if (!Files.exists(projectPath.resolve(".github"))) {
-                github.generate(projectPath, gitHubContextFactory.build(projectName, pkg, scopePrefix));
+                github.generate(projectPath, gitHubContextFactory.build(projectName, pkg, scopePrefix), templateDir);
             }
 
         } catch (Exception e) {
