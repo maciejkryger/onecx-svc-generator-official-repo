@@ -172,6 +172,17 @@ java -jar onecx-svc-generator/target/onecx-svc-generator-999-SNAPSHOT-runner.jar
 #### with Liquibase diff generation for existing entities - generates changelog with missing tables/columns based on the model definition:
 ```bash
 cd ../
+java -jar onecx-svc-generator/target/onecx-svc-generator-999-SNAPSHOT-runner.jar batch-model \
+  --project /home/Maciej/projects/onecx/onecx-demo-svc \
+  --package org.tkit.onecx.demo \
+  --model /home/Maciej/projects/onecx/onecx-svc-generator/generator/examples/model.yaml \
+  --build true \
+  --template-dir test_templates
+``` 
+
+#### with Liquibase diff generation for existing entities - generates changelog with missing tables/columns based on the model definition:
+```bash
+cd ../
 java -jar /home/Maciej/projects/onecx/onecx-svc-generator-official-repo/target/onecx-svc-generator-999-SNAPSHOT-runner.jar batch-model \
   --project /home/Maciej/projects/onecx/onecx-demo-svc \
   --package org.tkit.onecx.demo \

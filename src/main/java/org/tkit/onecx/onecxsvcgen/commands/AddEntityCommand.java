@@ -127,6 +127,7 @@ public class AddEntityCommand implements Runnable {
     @Override
     public void run() {
         try {
+            templates.startTemplateSession(templateDir);
             Path projectPath = project.toAbsolutePath().normalize();
 
             List<FieldDef> fields = models.parseFields(fieldsRaw);
@@ -173,6 +174,8 @@ public class AddEntityCommand implements Runnable {
 
                 liquibase.registerInclude(projectPath, changelogFile);
             }
+
+            templates.printTemplateSummary();
 
             if (liquibaseDiff) {
                 System.out.println("▶ Liquibase diff requested, generating changelog from db-diff profile...");

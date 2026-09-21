@@ -88,6 +88,7 @@ public class BatchModelCommand implements Runnable {
     @Override
     public void run() {
         try {
+            templates.startTemplateSession(templateDir);
             Path projectPath = project.toAbsolutePath().normalize();
             Path modelPath = model.toAbsolutePath().normalize();
 
@@ -152,6 +153,8 @@ public class BatchModelCommand implements Runnable {
             if (!Files.exists(projectPath.resolve(".github"))) {
                 github.generate(projectPath, gitHubContextFactory.build(projectName, pkg, scopePrefix), templateDir);
             }
+
+            templates.printTemplateSummary();
 
             if (build) {
                 System.out.println("▶ Build requested, starting Maven build...");

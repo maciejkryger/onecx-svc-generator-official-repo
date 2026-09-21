@@ -3,6 +3,7 @@ package org.tkit.onecx.onecxsvcgen.commands;
 import jakarta.inject.Inject;
 import org.tkit.onecx.onecxsvcgen.model.CreateSvcRequest;
 import org.tkit.onecx.onecxsvcgen.service.GeneratorService;
+import org.tkit.onecx.onecxsvcgen.service.TemplateService;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 
@@ -43,11 +44,16 @@ public class CreateSvcCommand implements Runnable {
     @Inject
     GeneratorService generatorService;
 
+    @Inject
+    TemplateService templates;
+
     @Override
     public void run() {
         try {
+            templates.startTemplateSession(templateDir);
             Path root = generatorService.generate(
                     new CreateSvcRequest(name, groupId, artifactId, pkg, outputDir, build), templateDir);
+            templates.printTemplateSummary();
             System.out.println("✔ Generated OneCX service in: " + root.toAbsolutePath());
         } catch (Exception e) {
             throw new RuntimeException("create-svc failed", e);
