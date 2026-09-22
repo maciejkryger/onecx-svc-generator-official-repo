@@ -175,8 +175,6 @@ public class AddEntityCommand implements Runnable {
                 liquibase.registerInclude(projectPath, changelogFile);
             }
 
-            templates.printTemplateSummary();
-
             if (liquibaseDiff) {
                 System.out.println("▶ Liquibase diff requested, generating changelog from db-diff profile...");
                 buildService.runLiquibaseDiff(projectPath);
@@ -194,6 +192,8 @@ public class AddEntityCommand implements Runnable {
             if (!Files.exists(projectPath.resolve(".github"))) {
                 github.generate(projectPath, gitHubContextFactory.build(projectName, pkg, scopePrefix), templateDir);
             }
+
+            templates.printTemplateSummary();
 
         } catch (Exception e) {
             throw new RuntimeException("add-entity failed", e);
